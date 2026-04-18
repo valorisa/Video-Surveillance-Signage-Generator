@@ -12,6 +12,7 @@ Usage:
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -40,7 +41,49 @@ FONT_SIZE_TITLE = 28
 FONT_SIZE_BODY = 16
 FONT_SIZE_FOOTER = 12
 
-DEFAULT_FONT = "Arial"
+FONT_PATHS = {
+    "Darwin": [
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/Arial.ttf",
+        "/Library/Fonts/Arial.ttf",
+    ],
+    "Linux": [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+    ],
+    "Windows": [
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\tahoma.ttf",
+    ],
+}
+
+
+def get_font_path() -> str:
+    """Retourne le chemin d'une police disponible sur le système."""
+    import platform
+
+    system = platform.system()
+    font_candidates = FONT_PATHS.get(system, [])
+
+    for font_path in font_candidates:
+        if os.path.exists(font_path):
+            return font_path
+
+    return None
+
+
+def validate_phone_number(phone: str) -> bool:
+    """Valide le format du numéro de téléphone français."""
+    cleaned = re.sub(r"[\s\.\-]", "", phone)
+    pattern = r"^0[1-9]\d{8}$"
+    return bool(re.match(pattern, cleaned))
+
+
+def validate_autorisation(autorisation: str) -> bool:
+    """Valide le format du numéro d'autorisation."""
+    pattern = r"^\d{4}-[\w\-]+$"
+    return bool(re.match(pattern, autorisation))
 
 
 def load_template():
@@ -58,7 +101,7 @@ def generate_text(template: str, numero_autorisation: str, telephone: str) -> st
     )
 
 
-def generate_qr_code(output_path: str = None) -> Image.Image:
+def generate_qr_code(output_path: str = None, format: str = "png") -> Image.Image:
     """Génère le QR-code pointant vers la page CNIL."""
     qr = qrcode.QRCode(
         version=1,
@@ -78,6 +121,22 @@ def generate_qr_code(output_path: str = None) -> Image.Image:
     return img
 
 
+def generate_qr_code_svg(output_path: str) -> str:
+    """Génère le QR-code au format SVG vectoriel."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(CNIL_URL)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    img.save(output_path)
+    return output_path
+
+
 def create_affiche(
     text: str,
     qr_image: Image.Image,
@@ -88,11 +147,12 @@ def create_affiche(
     img = Image.new("RGB", (AFFICHE_WIDTH, AFFICHE_HEIGHT), "white")
     draw = ImageDraw.Draw(img)
 
-    try:
-        font_title = ImageFont.truetype(f"{DEFAULT_FONT}.ttf", FONT_SIZE_TITLE)
-        font_body = ImageFont.truetype(f"{DEFAULT_FONT}.ttf", FONT_SIZE_BODY)
-        font_footer = ImageFont.truetype(f"{DEFAULT_FONT}.ttf", FONT_SIZE_FOOTER)
-    except IOError:
+    font_path = get_font_path()
+    if font_path:
+        font_title = ImageFont.truetype(font_path, FONT_SIZE_TITLE)
+        font_body = ImageFont.truetype(font_path, FONT_SIZE_BODY)
+        font_footer = ImageFont.truetype(font_path, FONT_SIZE_FOOTER)
+    else:
         font_title = ImageFont.load_default()
         font_body = ImageFont.load_default()
         font_footer = ImageFont.load_default()
@@ -149,18 +209,34 @@ def main():
 
     args = parser.parse_args()
 
+    if not validate_autorisation(args.autorisation):
+        print(
+            f"Erreur: Numéro d'autorisation invalide. Format attendu: AAAA-XXXXX (ex: 2024-12345)"
+        )
+        sys.exit(1)
+
+    if not validate_phone_number(args.telephone):
+        print(
+            "Erreur: Numéro de téléphone invalide. Format attendu: 01 23 45 67 89 (10 chiffres français)"
+        )
+        sys.exit(1)
+
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     template = load_template()
     text = generate_text(template, args.autorisation, args.telephone)
 
     output_name = args.output or f"affiche_{args.autorisation}"
-    qr_output = OUTPUT_DIR / f"qrcode_{args.autorisation}.png"
+    qr_output = OUTPUT_DIR / f"qrcode_{args.autorisation}"
 
-    qr_image = generate_qr_code(str(qr_output))
-
-    affiche_output = OUTPUT_DIR / f"{output_name}.{args.format.lower()}"
-    create_affiche(text, qr_image, str(affiche_output), args.format)
+    if args.format.upper() == "SVG":
+        qr_output_svg = f"{qr_output}.svg"
+        generate_qr_code_svg(qr_output_svg)
+        print(f"QR-code SVG généré: {qr_output_svg}")
+    else:
+        qr_image = generate_qr_code(f"{qr_output}.png")
+        affiche_output = OUTPUT_DIR / f"{output_name}.png"
+        create_affiche(text, qr_image, str(affiche_output), "PNG")
 
 
 if __name__ == "__main__":
