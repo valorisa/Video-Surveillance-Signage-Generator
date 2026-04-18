@@ -4,7 +4,7 @@
 [![Conformité CSI](https://img.shields.io/badge/Conformit%C3%A9-CSI%20L223--1%20%C3%A0%20L255--1-blue)](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000025503132/LEGISCTA000025505703/)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
 
-Un outil simple, gratuit et open-source pour générer l'affichette d'information obligatoire imposée par le Code de la sécurité intérieure (CSI) pour tout établissement équipé d'un système de vidéoprotection.
+Un outil simple, gratuit et open-source permettant de générer l'affichette d'information obligatoire conforme au Code de la sécurité intérieure française (articles L223-1 à L223-9 et L251-1 à L255-1). Destiné aux établissements équipés d'un système de vidéoprotection, ce générateur produit une affiche réglementaire prête à imprimer avec mention légale, numéro d'autorisation préfectorale, références juridiques et QR-code vers le site officiel de la CNIL.
 
 ---
 
