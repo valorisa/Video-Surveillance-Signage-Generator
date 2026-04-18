@@ -160,7 +160,7 @@ Le fichier `src/template.txt` contient le texte de l'affiche. Vous pouvez le mod
 
 Exemple de template personnalisé :
 
-```
+```text
 Mon Commerce sous vidéo-protection.
 
 Autorisation préfectorale N° {{NUMERO_AUTORISATION}}
@@ -304,7 +304,7 @@ Avant de soumettre une contribution, vérifiez que :
 
 ## Avertissements
 
-1. **Ceツール n'est pas un conseil juridique.** Pour des questions spécifiques à votre situation, consultez un avocat spécialisé ou votre préfecture.
+1. **Ce n'est pas un conseil juridique.** Pour des questions spécifiques à votre situation, consultez un avocat spécialisé ou votre préfecture.
 
 2. **Vérifiez toujours les exigences locales.** Certaines préfectures peuvent avoir des exigences spécifiques.
 
